@@ -138,6 +138,12 @@ export default function nameofTransformer(ctx: ts.TransformationContext, program
       if (!updated) {
         return ts.visitEachChild(node, visitor, ctx);
       }
+      // insert `undefined` for any parameters that are not in fact defined
+      for (let i = 0; i < newArgs.length; ++i) {
+        if (!newArgs[i]) {
+          newArgs[i] = ts.createVoidZero();
+        }
+      }
       // Finally, return the transformed node
       return ts.isCallExpression(node)
         ? ts.updateCall(node, node.expression, node.typeArguments, newArgs)
