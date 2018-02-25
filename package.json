@@ -1,5 +1,5 @@
 {
-  "name": "xtsc-nameof",
+  "name": "ts-transform-nameof",
   "version": "1.0.0",
   "description": "",
   "main": "./index.js",
@@ -7,8 +7,8 @@
     "build": "tsc"
   },
   "typings": "./index.d.ts",
-  "author": "",
-  "license": "ISC",
+  "author": "Simon Gellis",
+  "license": "Apache-2.0",
   "devDependencies": {
     "typescript": "^2.7.2"
   },

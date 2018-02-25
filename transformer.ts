@@ -82,7 +82,7 @@ export default function nameofTransformer(ctx: ts.TransformationContext, program
         if (typeArg) {
           const namedType = typeChecker.getTypeFromTypeNode(typeArg);
           const name = typeChecker.typeToString(namedType);
-          return ts.updateCall(node, node.expression, node.typeArguments, [ts.createLiteral(name)])
+          return ts.updateCall(node, node.expression, node.typeArguments, [ts.createLiteral(name)]);
         }
       }
 
