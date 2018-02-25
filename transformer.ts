@@ -77,6 +77,14 @@ export default function nameofTransformer(ctx: ts.TransformationContext, program
       if (!ts.isCallOrNewExpression(node)) {
         return ts.visitEachChild(node, visitor, ctx);
       }
+      if (isNameofCall(node, sourceFile) && !node.arguments.length) {
+        const typeArg = node.typeArguments && node.typeArguments[0];
+        if (typeArg) {
+          const namedType = typeChecker.getTypeFromTypeNode(typeArg);
+          const name = typeChecker.typeToString(namedType);
+          return ts.updateCall(node, node.expression, node.typeArguments, [ts.createLiteral(name)])
+        }
+      }
 
       // Use the type checker to search the signature of the method call for a nameof initializer.
       // We're expecting a signature like myFunc<T>(foo: string, bar: string, name = typeof<T>())
