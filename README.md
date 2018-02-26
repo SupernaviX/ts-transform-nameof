@@ -8,13 +8,15 @@ A custom TypeScript transformer that exposes the name of a type at runtime. It c
 ```json
 {
   "compilerOptions": {
-    "plugins": {
-      "customTransformers": {
-        "before": [
-          "ts-transform-nameof/transformer"
-        ]
+    "plugins": [
+      {
+        "customTransformers": {
+          "before": [
+            "ts-transform-nameof/transformer"
+          ]
+        }
       }
-    }
+    ]
   }
 }
 ```
