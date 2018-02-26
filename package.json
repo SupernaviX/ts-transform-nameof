@@ -4,6 +4,7 @@
   "description": "",
   "main": "./index.js",
   "scripts": {
+    "publish": "npm run build",
     "build": "tsc"
   },
   "typings": "./index.d.ts",
