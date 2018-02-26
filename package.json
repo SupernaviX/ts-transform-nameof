@@ -1,6 +1,6 @@
 {
   "name": "ts-transform-nameof",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "./index.js",
   "scripts": {
@@ -9,6 +9,11 @@
   },
   "typings": "./index.d.ts",
   "author": "Simon Gellis",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SupernaviX/ts-typescript-nameof.git"
+  },
+  "bugs": "https://github.com/SupernaviX/ts-typescript-nameof/issues",
   "license": "Apache-2.0",
   "devDependencies": {
     "typescript": "^2.7.2"
