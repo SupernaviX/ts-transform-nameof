@@ -1,4 +1,5 @@
 import * as ts from 'typescript';
+import * as path from 'path';
 
 function getText(node: ts.Node, sourceFile: ts.SourceFile): string {
   return sourceFile.text.substring(node.pos, node.end).trim();
@@ -11,19 +12,27 @@ function getSourceFile(node: ts.Node): ts.SourceFile {
   return node;
 }
 
-function isNameofCall(node: ts.Node, sourceFile: ts.SourceFile): node is ts.CallExpression {
+const nameofPath = path.join(__dirname, 'index.d.ts').replace(/\\/g, '/');
+
+function isNameofCall(node: ts.Node, typeChecker: ts.TypeChecker): node is ts.CallExpression {
   if (!ts.isCallExpression(node)) {
     return false;
   }
-  return getText(node.expression, sourceFile) === 'nameof';
+  const signature = typeChecker.getResolvedSignature(node);
+  if (!signature || !signature.declaration) {
+    return false;
+  }
+  const source = getSourceFile(signature.declaration);
+  return source.fileName === nameofPath
+    && getText(signature.declaration.name, source) === 'nameof'; 
 }
 
-function findTypeNodeToName(parameter: ts.ParameterDeclaration, sourceFile: ts.SourceFile): ts.TypeNode | undefined {
+function findTypeNodeToName(parameter: ts.ParameterDeclaration, typeChecker: ts.TypeChecker): ts.TypeNode | undefined {
   const initializer = parameter.initializer;
   if (!initializer) {
     return;
   }
-  if (!isNameofCall(initializer, sourceFile)) {
+  if (!isNameofCall(initializer, typeChecker)) {
     return;
   }
   if (!initializer.typeArguments || !initializer.typeArguments.length) {
@@ -76,7 +85,7 @@ export default function nameofTransformer(ctx: ts.TransformationContext, program
       if (!ts.isCallOrNewExpression(node)) {
         return ts.visitEachChild(node, visitor, ctx);
       }
-      if (isNameofCall(node, sourceFile) && !node.arguments.length) {
+      if (isNameofCall(node, typeChecker) && !node.arguments.length) {
         const typeArg = node.typeArguments && node.typeArguments[0];
         if (typeArg) {
           const namedType = typeChecker.getTypeFromTypeNode(typeArg);
@@ -93,7 +102,6 @@ export default function nameofTransformer(ctx: ts.TransformationContext, program
         // No declaration, no transformation
         return ts.visitEachChild(node, visitor, ctx);
       }
-      const functionSourceFile = getSourceFile(declaration);
 
       // Keep track of the arguments that will be passed in
       // Don't forget to visit each argument, in case it uses a nameof internally too
@@ -101,7 +109,7 @@ export default function nameofTransformer(ctx: ts.TransformationContext, program
       let updated = false;
       for (let i = 0; i < declaration.parameters.length; ++i) {
         const parameter = declaration.parameters[i];
-        const typeNodeToName = findTypeNodeToName(parameter, functionSourceFile);
+        const typeNodeToName = findTypeNodeToName(parameter, typeChecker);
         if (!typeNodeToName) {
           continue;
         }

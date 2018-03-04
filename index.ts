@@ -10,3 +10,4 @@ export function nameof<T>(localName?: string): string {
   }
   throw new Error("A call to ts-transform-nameof failed to transpile.");
 }
+export default nameof;
