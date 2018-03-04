@@ -32,18 +32,17 @@ function findTypeNodeToName(parameter: ts.ParameterDeclaration, sourceFile: ts.S
   return initializer.typeArguments[0];
 }
 
-// HACK: uses undocumented/private functionality from the type checker.
-function getTypeArguments(typeChecker: ts.TypeChecker, signature: ts.Signature): ts.TypeNode[] {
-  // Generate a "call signature" declaration for this signature,
-  // passing a specific set of undocumented flags which tell it to resolve the full type arguments.
-  const decl = typeChecker.signatureToSignatureDeclaration(
-    signature,
-    ts.SyntaxKind.CallSignature,
-    undefined,
-    ts.TypeFormatFlags.WriteTypeArgumentsOfSignature | ts.NodeBuilderFlags.WriteTypeParametersInQualifiedName
-  );
-  // This signature now has a private "typeArguments" property containing the inferred type arguments of the call.
-  return decl['typeArguments'] || [];
+// HACK: uses internal members of signature.
+type TypeMapper = (t: ts.TypeParameter) => ts.Type;
+function getTypeArguments(signature: ts.Signature): ts.Type[] {
+  const targetParams: ts.TypeParameter[] = signature['target'] && signature['target'].typeParameters;
+  if (!targetParams) {
+    return [];
+  }
+  const mapper: TypeMapper = signature['mapper'];
+  return mapper
+    ? targetParams.map(p => mapper(p))
+    : targetParams;
 }
 
 const firstDefinedHelper: ts.EmitHelper = {
@@ -96,8 +95,6 @@ export default function nameofTransformer(ctx: ts.TransformationContext, program
       }
       const functionSourceFile = getSourceFile(declaration);
 
-      const printer = ts.createPrinter();
-
       // Keep track of the arguments that will be passed in
       // Don't forget to visit each argument, in case it uses a nameof internally too
       const newArgs = Array.from(node.arguments).map(node => ts.visitNode(node, visitor));
@@ -128,13 +125,13 @@ export default function nameofTransformer(ctx: ts.TransformationContext, program
             // The node is either a CallExpression for a generic method,
             // or a NewExpression for a generic class.
             // Either way, we can find the type argument in the node's signature.
-            const signatureTypeArgs = getTypeArguments(typeChecker, signature);
-            name = printer.printNode(ts.EmitHint.Unspecified, signatureTypeArgs[inputIndex], sourceFile);
+            const signatureTypeArgs = getTypeArguments(signature);
+            name = typeChecker.typeToString(signatureTypeArgs[inputIndex]);
           }
 
         } else {
           // If it's not a type parameter, just fall back to the exact text of T
-          name = printer.printNode(ts.EmitHint.Unspecified, typeNodeToName, functionSourceFile);
+          name = typeChecker.typeToString(type);
         }
 
         // Update the args to pass
